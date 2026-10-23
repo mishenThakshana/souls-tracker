@@ -22,15 +22,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.AlertDialog
@@ -47,8 +44,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -75,7 +70,6 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -103,7 +97,7 @@ fun ChecklistScreen(app: SoulsTrackerApp, gameId: String, onBack: () -> Unit) {
 
     val listState = rememberLazyListState()
 
-    // Header (app bar, tabs, progress, search, filters) slides away while scrolling down
+    // Header (app bar, tabs, progress) slides away while scrolling down
     // and slides back in while scrolling up.
     var headerHeight by remember { mutableIntStateOf(0) }
     var headerOffset by remember { mutableFloatStateOf(0f) }
@@ -145,6 +139,18 @@ fun ChecklistScreen(app: SoulsTrackerApp, gameId: String, onBack: () -> Unit) {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 },
                 actions = {
+                    if (!state.loading) {
+                        val activeFilters = (if (state.status != StatusFilter.All) 1 else 0) + (if (state.category != null) 1 else 0)
+                        IconButton(onClick = { showFilters = true }) {
+                            BadgedBox(badge = { if (activeFilters > 0) Badge { Text("$activeFilters") } }) {
+                                Icon(
+                                    Icons.Filled.FilterList,
+                                    contentDescription = "Filters",
+                                    tint = if (activeFilters > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
                     if (state.tips.isNotEmpty()) {
                         IconButton(onClick = { showTips = true }) { Icon(Icons.Filled.Lightbulb, contentDescription = "Guide tips") }
                     }
@@ -166,7 +172,6 @@ fun ChecklistScreen(app: SoulsTrackerApp, gameId: String, onBack: () -> Unit) {
             if (!state.loading) {
                 SheetTabs(state, onSelect = vm::selectSheet)
                 ProgressSummary(state)
-                SearchRow(state, onQuery = vm::setQuery, onOpenFilters = { showFilters = true })
             }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -302,45 +307,6 @@ private fun ProgressSummary(state: ChecklistUiState) {
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
             drawStopIndicator = {},
         )
-    }
-}
-
-@Composable
-private fun SearchRow(state: ChecklistUiState, onQuery: (String) -> Unit, onOpenFilters: () -> Unit) {
-    val activeFilters = (if (state.status != StatusFilter.All) 1 else 0) + (if (state.category != null) 1 else 0)
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, bottom = 12.dp),
-    ) {
-        OutlinedTextField(
-            value = state.query,
-            onValueChange = onQuery,
-            placeholder = { Text("Search items, places, notes") },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            trailingIcon = {
-                if (state.query.isNotEmpty()) {
-                    IconButton(onClick = { onQuery("") }) { Icon(Icons.Filled.Clear, contentDescription = "Clear search") }
-                }
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-            ),
-            modifier = Modifier.weight(1f),
-        )
-        IconButton(onClick = onOpenFilters, modifier = Modifier.padding(start = 4.dp)) {
-            BadgedBox(badge = { if (activeFilters > 0) Badge { Text("$activeFilters") } }) {
-                Icon(
-                    Icons.Filled.FilterList,
-                    contentDescription = "Filters",
-                    tint = if (activeFilters > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
     }
 }
 

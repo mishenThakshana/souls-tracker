@@ -41,7 +41,6 @@ data class ChecklistUiState(
     val tips: List<String> = emptyList(),
     val sheets: List<SheetSummary> = emptyList(),
     val selectedSheet: Int = 0,
-    val query: String = "",
     val status: StatusFilter = StatusFilter.All,
     val category: String? = null,
     val categories: List<String> = emptyList(),
@@ -51,7 +50,6 @@ data class ChecklistUiState(
 
 private data class Inputs(
     val sheet: Int = 0,
-    val query: String = "",
     val status: StatusFilter = StatusFilter.All,
     val category: String? = null,
     val collapsed: Set<String> = emptySet(),
@@ -109,17 +107,14 @@ class ChecklistViewModel(
 
     private fun build(list: Checklist, allSections: List<List<Section>>, done: Set<String>, input: Inputs): ChecklistUiState {
         val sheet = list.sheets[input.sheet]
-        val query = input.query.trim().lowercase()
-        val filtering = query.isNotEmpty() || input.status != StatusFilter.All || input.category != null
+        val filtering = input.status != StatusFilter.All || input.category != null
 
         val rows = mutableListOf<ChecklistRow>()
         for (section in allSections[input.sheet]) {
             val matches = section.tasks.filter { e ->
                 val isDone = e.id in done
                 (input.status == StatusFilter.All || (input.status == StatusFilter.Done) == isDone) &&
-                    (input.category == null || e.category.equals(input.category, ignoreCase = true)) &&
-                    (query.isEmpty() || e.item.lowercase().contains(query) || e.location.lowercase().contains(query) ||
-                        e.notes.lowercase().contains(query))
+                    (input.category == null || e.category.equals(input.category, ignoreCase = true))
             }
             if (filtering && matches.isEmpty()) continue
             // While filtering, show every match even inside collapsed sections.
@@ -134,7 +129,6 @@ class ChecklistViewModel(
             tips = list.tips,
             sheets = list.sheets.map { s -> s.tasks().let { t -> SheetSummary(s.title, t.count { it.id in done }, t.size) } },
             selectedSheet = input.sheet,
-            query = input.query,
             status = input.status,
             category = input.category,
             categories = sheet.tasks().map { it.category.trim() }.filter { it.isNotEmpty() }
@@ -145,7 +139,6 @@ class ChecklistViewModel(
     }
 
     fun selectSheet(index: Int) = inputs.update { it.copy(sheet = index, category = null) }
-    fun setQuery(query: String) = inputs.update { it.copy(query = query) }
     fun setStatus(status: StatusFilter) = inputs.update { it.copy(status = status) }
     fun setCategory(category: String?) = inputs.update { it.copy(category = category) }
 
