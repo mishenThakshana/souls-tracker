@@ -1,0 +1,4 @@
+-keepattributes *Annotation*, InnerClasses
+-keep,includedescriptorclasses class com.soulstracker.**$$serializer { *; }
+-keepclassmembers class com.soulstracker.** { *** Companion; }
+-keepclasseswithmembers class com.soulstracker.** { kotlinx.serialization.KSerializer serializer(...); }
