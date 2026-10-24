@@ -48,6 +48,9 @@ for mk in markers:
     byEnt.setdefault(mk['entityId'], mk)
     if mk['category'] == 'npc' and mk['displayName']:
         add(mk['displayName'], 'npc', mk['mapId'], mk['x'], mk['z'])
+    # scarabs (c4190-c4192, c6201 in the DLC) drop most Ashes of War and many spells, but their lots aren't in placements.ts
+    if mk['category'] == 'enemy' and re.match(r'c(419[0-2]|6201)_', mk['name']):
+        add('Scarab', 'scarab', mk['mapId'], mk['x'], mk['z'])
 regions = {r['name']: r['area'] for r in arr('regions.ts')}
 for g in arr('graces.ts'):
     mk = byEnt.get(g['bonfireEntityId'])
@@ -59,7 +62,14 @@ names = {}
 for f, t in [('weapons.ts','weapon'),('goods.ts','goods'),('armor.ts','armor'),('talismans.ts','talisman'),('spells.ts','goods'),('spirit-ashes.ts','goods'),('ashes-of-war.ts','gem')]:
     for it in arr(f):
         names.setdefault((t, it['id']), it['name'])
-for p in arr('placements.ts'):
+placements = arr('placements.ts')
+# Scripted rewards (quest items, NPC gifts) are often filed at one placeholder spot per map, e.g. 33 unrelated
+# rewards at a single point in Ainsel River; such shared spots say nothing about where the item is.
+spot = collections.defaultdict(set)
+for p in placements:
+    if p['source'] == 'event': spot[(p['mapId'], round(p['x']), round(p['z']))].add(p['itemId'])
+for p in placements:
+    if p['source'] == 'event' and len(spot[(p['mapId'], round(p['x']), round(p['z']))]) >= 4: continue
     t = p['itemType']; iid = p['itemId']
     n = names.get((t, iid))
     if n is None and t == 'weapon':
@@ -68,7 +78,9 @@ for p in arr('placements.ts'):
         n = names.get(('armor', iid))
     if n is None:
         n = names.get(('gem', iid))
-    add(n, 'armor' if t == 'armor' else 'item', p['mapId'], p['x'], p['z'], p['source'])
+    # an event at (0, 0) is only known to be somewhere in that map tile
+    tile = p['source'] == 'event' and p['x'] == 0 and p['z'] == 0
+    add(n, 'armor' if t == 'armor' else 'item', p['mapId'], p['x'], p['z'], 'tile' if tile else p['source'])
 
 # dedupe near-identical points per name
 seen = collections.defaultdict(list); out = []

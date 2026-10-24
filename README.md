@@ -47,7 +47,7 @@ python3 tools/pack_tiles.py /tmp/jw/ctiles matched.json app/src/main/assets/elde
 python3 tools/export_app_data.py matched.json app/src/main/assets/eldenring/checklist.json
 ```
 
-`match.py` looks up each step's item name in the datamined data. When there are several candidates, it uses the step's Location and the previous step to choose one. If there is no confident match, it falls back to that location's area. It also anchors a few map landmarks that aren't graces to their nearest grace, using the Fextralife wiki.
+`match.py` looks up each step's item name in the datamined data. When there are several candidates, it uses the places named in the step's notes (a grace written as "X SoG", a landmark, a boss or an NPC), then its Location and the previous step, to choose one. Steps whose notes say "Sold by", "Received from" or "Dropped by" an NPC or boss are pinned on that NPC or boss. "Kill the scarab" steps use the datamined scarab nearest the place the notes start from. A step with nothing more specific than its region is placed with the steps around it, not at the region's centre. `extract.py` skips scripted rewards that the game files at a shared placeholder spot. If there is no confident match, it falls back to that location's area. It also anchors a few map landmarks that aren't graces to their nearest grace, using the Fextralife wiki.
 
 `pack_tiles.py` bundles only the 290 zoom-5 map tiles that some step's crop touches, about 3.7 MB. The app cuts each step's crop from these tiles and draws the red marker when the info box opens (`MapCropRenderer.kt`).
 
